@@ -12,7 +12,7 @@
 
 class IRCBot {
 	public function version() {
-		return '1.0';
+		return '1.1';
 	}
 	public function init() {
 		global $modules;
@@ -62,22 +62,48 @@ class IRCBot {
 		if(!$sock) { die($errstr); }
 		return fgets($sock, 1024);
 	}
+	
+	
+	/*FUNCTIONS FOR SENDING COMMANDS TO SERVER*/
+	//Send raw commands to server.
 	public function raw($string) {
 		global $sock;
 		global $c;
 		fwrite($sock, $string."\n\r");
 		echo "[SENT] ".$string."\n";
 	}
+	
+	//Send PRIVMSG to user/channel
 	public function privmsg($target, $message) {
-		global $sock;
 		global $c;
-		fwrite($sock, "PRIVMSG ".$target." :".$message."\n\r");
+		$this->raw("PRIVMSG ".$target." :".$message);
 	}
+	
+	//Send notice to user/channel
 	public function notice($target, $message) {
-		global $sock;
 		global $c;
-		fwrite($sock, "NOTICE ".$target." :".$message."\n\r");
+		$this->raw("NOTICE ".$target." :".$message);
 	}
+	
+	//Join a channel
+	public function join($channel) {
+		$this->raw("JOIN ".$channel);
+	}
+	//Leave a channel
+	public function part($channel, $message = "Leaving") {
+		$this->raw("PART ".$channel." :".$message);
+	}
+	//Send server pass
+	public function pass($password) {
+		$this->raw("PASS :".$password);
+	}
+	//Change nick name
+	public function nick($newnick) {
+		$this->raw("NICK ".$newnick);
+		$me=$newnick;
+	}
+	/*END OF SERVER COMMAND FUNCTIONS*/
+	
 	public function registerModule($name, $author, $commands = array(), $help = array()) {
 		global $modinfo;
 		global $modules;
