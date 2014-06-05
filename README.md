@@ -1,0 +1,4 @@
+PHPIRCBotClass
+==============
+
+IRCBot Class
