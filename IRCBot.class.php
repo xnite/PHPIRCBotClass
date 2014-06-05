@@ -1,12 +1,19 @@
 <?php
-/*********************************************************\
-** Project:		IRC Bot Class                            **
-** Author:		Robert 'xnite' Whitney <xnite@xnite.org> **
-** Copyright:	2014                                     **
-** License:		TBA                                      **
-\*********************************************************/
+/*******************************************************************************************************************************************\
+** Project:		PHP IRCBot Class                                                                                                           **
+** Author:		Robert 'xnite' Whitney <xnite@xnite.org>                                                                                   **
+** Copyright:	2014                                                                                                                       **
+** License:		Creative Commons At-NC-ND 4.0 International                                                                                **
+** ChaosBot v2.x by Robert Whitney is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. **
+** Based on a work at https://github.com/xnite/PHPIRCBotClass.                                                                             **
+** Permissions beyond the scope of this license may be available at http://xnite.org/copyright.                                            **
+\*******************************************************************************************************************************************/
+
 
 class IRCBot {
+	public function version() {
+		return '1.0';
+	}
 	public function init() {
 		global $modules;
 		global $modinfo;
@@ -22,7 +29,8 @@ class IRCBot {
 			'port'		=>	$port,
 			'nick'		=>	$nick,
 			'ident'		=>	$ident,
-			'realname'	=>	$realname
+			'realname'	=>	$realname,
+			'trigger'	=>	'!'
 		)));
 	}
 	
@@ -106,3 +114,4 @@ class IRCBot {
 		array_push($modhooks, array('regex' => $string, 'func' => $func));
 	}
 }
+?>
