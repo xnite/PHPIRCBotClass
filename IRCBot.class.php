@@ -18,6 +18,8 @@ class IRCBot {
 		global $modules;
 		global $modinfo;
 		global $modhooks;
+		global $HELP;
+		$HELP=array();
 		$modules=array();
 		$modinfo=array();
 		$modhooks=array();
@@ -103,15 +105,31 @@ class IRCBot {
 		$me=$newnick;
 	}
 	/*END OF SERVER COMMAND FUNCTIONS*/
+	//Get target of your messages
+	public function target($chan, $nick) {
+		global $me;
+		if($chan == $me) { return $nick; }
+		else { return $chan; }
+	}
 	
+	//Register modules to the class.
 	public function registerModule($name, $author, $commands = array(), $help = array()) {
 		global $modinfo;
 		global $modules;
+		global $HELP;
 		$modinfo[$name]=array();
 		$modinfo[$name]['author']=$author;
 		$modinfo[$name]['commands']=$commands;
-		$modinfo[$name]['help']=$help;
+		while(list($command, $helptext) = each($help)) {
+			$HELP[$command]=$helptext;
+		}
 	}
+	//Get help text for commands
+	public function cmdHelp($command) {
+		global $HELP;
+		return $HELP[$command];
+	}
+	//Get a list of commands
 	public function listCommands() {
 		global $modinfo;
 		$return=array();
@@ -122,6 +140,7 @@ class IRCBot {
 		}
 		return $return;
 	}
+	//Parse commands from raw server strings
 	public function cmdHandle($string) {
 		global $c;
 		global $modinfo;
@@ -135,9 +154,17 @@ class IRCBot {
 			}
 		}
 	}
+	//Hook raw server strings for parsing
 	public function hook($string, $func) {
 		global $modhooks;
 		array_push($modhooks, array('regex' => $string, 'func' => $func));
+	}
+	//Hook commands for parsing
+	public function hook_command($command, $func) {
+		global $modhooks;
+		global $config;
+		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) PRIVMSG (?<chan>.*) :'.$config->trigger.''.$command.' (?<arguments>.*)$/i', 'func' => $func));
+		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) PRIVMSG (?<chan>.*) :'.$config->trigger.''.$command.'$/i', 'func' => $func));
 	}
 }
 ?>
