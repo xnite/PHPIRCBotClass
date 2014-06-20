@@ -1,46 +1,45 @@
 <?php
-/*******************************************************************************************************************************************\
-** Project:		PHP IRCBot Class                                                                                                           **
-** Author:		Robert 'xnite' Whitney <xnite@xnite.org>                                                                                   **
-** Copyright:	2014                                                                                                                       **
-** License:		Creative Commons At-NC-ND 4.0 International                                                                                **
-** ChaosBot v2.x by Robert Whitney is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. **
-** Based on a work at https://github.com/xnite/PHPIRCBotClass.                                                                             **
-** Permissions beyond the scope of this license may be available at http://xnite.org/copyright.                                            **
-\*******************************************************************************************************************************************/
+/***********************************************************************************************************************************************************\
+**	Project:		PHP IRCBot Class																						**
+**	Author:		Robert 'xnite' Whitney <xnite@xnite.org>																	**
+**	Copyright:		2014																							**
+**	License:		Creative Commons At-NC-ND 4.0 International																**
+**	PHP IRC Class  by Robert Whitney is licensed under a Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License.	**
+**	Based on a work at https://github.com/xnite/PHPIRCBotClass.																	**
+**	Permissions beyond the scope of this license may be available at http://xnite.org/copyright.											**
+\***********************************************************************************************************************************************************/
 class IRCBot {
 	public $version;
 	public $codename;
 	public $version_string;
 	public $use_ssl;
 	public $bind_ip;
-	$this->version='1.4';
-	$this->codename="Cup o` Tea";
 	$this->version_string='IRCBot Class v'.$this->version.' - '.$this->codename;
 	public function version() {
 		return $this->version;;
 	}
-	public function __construct($server, $port, $nick, $ident, $realname, $ssl = false, $bind_ip = false) {
+	public function __construct($server, $port, $nick, $ident, $realname, $ssl = false) {
 		global $c;
 		global $modules;
 		global $modinfo;
 		global $modhooks;
 		global $HELP;
 		global $CHECKIFWINDOWS;
+		$this->version='1.4';
+		$this->codename="Cup o` Tea";
 		if(strncasecmp(PHP_OS, 'WIN', 3) == 0) { $CHECKIFWINDOWS=true; } else { $CHECKIFWINDOWS=false; }
 		$HELP=array();
 		$modules=array();
 		$modinfo=array();
 		$modhooks=array();
-		$this->use_ssl=$ssl;
-		$this->bind_ip=$bind_ip;
 		$c = json_decode(json_encode(array(
-			'server'	=>	$server,
+			'server'		=>	$server,
 			'port'		=>	$port,
+			'use_ssl'		=>	$ssl,
 			'nick'		=>	$nick,
 			'ident'		=>	$ident,
 			'realname'	=>	$realname,
-			'trigger'	=>	'!'
+			'trigger'		=>	'!'
 		)));
 	}
 	public function is_windows() {
@@ -51,7 +50,7 @@ class IRCBot {
 		global $c;
 		global $sock;
 		retry_connection: {
-			if($this->use_ssl == true) {
+			if($c->use_ssl == true) {
 				$sock = fsockopen('ssl://'.$c->server, $c->port, $errno, $errstr, $timeout);
 			} else {
 				$sock = fsockopen($c->server, $c->port, $errno, $errstr, $timeout);
