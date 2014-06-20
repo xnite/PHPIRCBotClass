@@ -8,24 +8,32 @@
 ** Based on a work at https://github.com/xnite/PHPIRCBotClass.                                                                             **
 ** Permissions beyond the scope of this license may be available at http://xnite.org/copyright.                                            **
 \*******************************************************************************************************************************************/
-
-
 class IRCBot {
+	public $version;
+	public $codename;
+	public $version_string;
+	public $use_ssl;
+	public $bind_ip;
+	$this->version='1.4';
+	$this->codename="Cup o` Tea";
+	$this->version_string='IRCBot Class v'.$this->version.' - '.$this->codename;
 	public function version() {
-		return '1.1';
+		return $this->version;;
 	}
-	public function init() {
+	public function __construct($server, $port, $nick, $ident, $realname, $ssl = false, $bind_ip = false) {
+		global $c;
 		global $modules;
 		global $modinfo;
 		global $modhooks;
 		global $HELP;
+		global $CHECKIFWINDOWS;
+		if(strncasecmp(PHP_OS, 'WIN', 3) == 0) { $CHECKIFWINDOWS=true; } else { $CHECKIFWINDOWS=false; }
 		$HELP=array();
 		$modules=array();
 		$modinfo=array();
 		$modhooks=array();
-	}
-	public function configure($server, $port, $nick, $ident, $realname) {
-		global $c;
+		$this->use_ssl=$ssl;
+		$this->bind_ip=$bind_ip;
 		$c = json_decode(json_encode(array(
 			'server'	=>	$server,
 			'port'		=>	$port,
@@ -35,13 +43,24 @@ class IRCBot {
 			'trigger'	=>	'!'
 		)));
 	}
-	
+	public function is_windows() {
+		global $CHECKIFWINDOWS;
+		return $CHECKIFWINDOWS;
+	}
 	public function connect($timeout = 30) {
 		global $c;
 		global $sock;
-		$sock = fsockopen($c->server, $c->port, $errno, $errstr, $timeout);
-		if(!$sock) {
-			die($errno.": ".$errstr);
+		retry_connection: {
+			if($this->use_ssl == true) {
+				$sock = fsockopen('ssl://'.$c->server, $c->port, $errno, $errstr, $timeout);
+			} else {
+				$sock = fsockopen($c->server, $c->port, $errno, $errstr, $timeout);
+			}
+			if(!$sock) {
+				echo '[ERROR] (no.'.$errno.') '.$errstr."\n";
+				echo "\[ERROR\] Trying to reconnect\n";
+				goto retry_connection;
+			}
 		}
 		while($this->heartbeat() == false) {
 				sleep(1);
@@ -78,13 +97,28 @@ class IRCBot {
 	//Send PRIVMSG to user/channel
 	public function privmsg($target, $message) {
 		global $c;
+		$message=str_replace('\002', "\002", $message);
+		$message=str_replace('\001', "\001", $message);
 		$this->raw("PRIVMSG ".$target." :".$message);
 	}
 	
 	//Send notice to user/channel
 	public function notice($target, $message) {
 		global $c;
+		$message=str_replace('\002', "\002", $message);
+		$message=str_replace('\001', "\001", $message);
 		$this->raw("NOTICE ".$target." :".$message);
+	}
+	//Send CTCP to user/channel
+	public function ctcp($target, $ctype) {
+		global $c;
+		$this->raw("PRIVMSG ".$target." \001".$ctype."\001");
+	}
+	
+	//Send CTCP Reply to user/channel
+	public function ctcp_reply($target, $ctype, $reply_data) {
+		global $c;
+		$this->raw("NOTICE ".$target." \001".$ctype." ".$reply_data."\001");
 	}
 	
 	//Join a channel
@@ -159,12 +193,33 @@ class IRCBot {
 		global $modhooks;
 		array_push($modhooks, array('regex' => $string, 'func' => $func));
 	}
+	public function hook_connect($func) {
+		global $modhooks;
+		array_push($modhooks, array('regex' => '/^:(?<server>.*) 376 (?<me>.*) :(?<line>.*)$/i', 'func' => $func));
+	}
 	//Hook commands for parsing
 	public function hook_command($command, $func) {
 		global $modhooks;
 		global $config;
 		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) PRIVMSG (?<chan>.*) :'.$config->trigger.''.$command.' (?<arguments>.*)$/i', 'func' => $func));
 		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) PRIVMSG (?<chan>.*) :'.$config->trigger.''.$command.'$/i', 'func' => $func));
+	}
+	//Hook CTCP strings (JUST The CTCP Type, no arguments)
+	public function hook_ctcp($ctype, $func) {
+		global $modhooks;
+		global $config;
+		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) PRIVMSG (?<chan>.*) :'."\001".$ctype."\001".'$/i', 'func' => $func));
+	}
+	//Hook on_join, please beware this will catch your own joins as well.
+	public function hook_join($func) {
+		global $modhooks;
+		global $config;
+		array_push($modhooks, array('regex' => '/^:(?<nick>.*)!(?<ident>.*)@(?<host>.*) JOIN (?<chan>.*)$/i', 'func' => $func));
+	}
+	public function hook_monlist_online($func) {
+		global $modhooks;
+		global $config;
+		array_push($modhooks, array('regex' => '/^:(?<server>.*) 731 * :(?<nick>.*)$/i', 'func' => $func));
 	}
 }
 ?>
